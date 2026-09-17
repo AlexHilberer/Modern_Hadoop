@@ -1,0 +1,104 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "5432:5432"
+    networks:
+      - hadoop-net
+
+  hadoop-master:
+    build:
+      context: ./docker/hadoop-base
+    container_name: hadoop-master
+    hostname: hadoop-master
+    environment:
+      - NODE_ROLE=master
+    depends_on:
+      - postgres
+    ports:
+      - "9870:9870"
+      - "8088:8088"
+      - "9083:9083"
+      - "10000:10000"
+    volumes:
+      - hadoop-master-data:/opt/hadoop-data
+    networks:
+      - hadoop-net
+
+  hadoop-worker1:
+    build:
+      context: ./docker/hadoop-base
+    container_name: hadoop-worker1
+    hostname: hadoop-worker1
+    environment:
+      - NODE_ROLE=worker
+    depends_on:
+      - hadoop-master
+      - zookeeper
+    volumes:
+      - hadoop-worker1-data:/opt/hadoop-data
+    networks:
+      - hadoop-net
+
+  hadoop-worker2:
+    build:
+      context: ./docker/hadoop-base
+    container_name: hadoop-worker2
+    hostname: hadoop-worker2
+    environment:
+      - NODE_ROLE=worker
+    depends_on:
+      - hadoop-master
+      - zookeeper
+    volumes:
+      - hadoop-worker2-data:/opt/hadoop-data
+    networks:
+      - hadoop-net
+
+  zookeeper:
+    build:
+      context: ./docker/hadoop-base
+    container_name: zookeeper
+    hostname: zookeeper
+    environment:
+      - NODE_ROLE=zookeeper
+    volumes:
+      - zookeeper-data:/opt/hadoop-data
+    networks:
+      - hadoop-net
+
+  hbase-master:
+    build:
+      context: ./docker/hadoop-base
+    container_name: hbase-master
+    hostname: hbase-master
+    environment:
+      - NODE_ROLE=hbase-master
+    depends_on:
+      - hadoop-master
+      - zookeeper
+    ports:
+      - "16010:16010"
+    volumes:
+      - hbase-master-data:/opt/hadoop-data
+    networks:
+      - hadoop-net
+
+networks:
+  hadoop-net:
+    driver: bridge
+
+volumes:
+  hadoop-master-data:
+  hadoop-worker1-data:
+  hadoop-worker2-data:
+  postgres-data:
+  zookeeper-data:
+  hbase-master-data:
