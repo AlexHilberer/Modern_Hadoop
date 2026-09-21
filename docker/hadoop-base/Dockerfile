@@ -40,6 +40,9 @@ ARG SPARK_VERSION=3.5.9
 RUN curl -fsSL https://dlcdn.apache.org/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-hadoop3.tgz \
       -o /tmp/spark.tgz
 
+# Flink-on-YARN needs the real Hadoop classpath (not just Tez's, unlike
+# Hive/HBase which launch via `hadoop jar`/RunJar and get it automatically)
+# exported as HADOOP_CLASSPATH — see the final stage below.
 FROM downloader-base AS downloader-flink
 ARG FLINK_VERSION=1.20.5
 RUN curl -fsSL https://dlcdn.apache.org/flink/flink-${FLINK_VERSION}/flink-${FLINK_VERSION}-bin-scala_2.12.tgz \
@@ -57,21 +60,30 @@ ENV HADOOP_VERSION=3.4.3
 ENV HIVE_VERSION=4.2.1
 ENV HBASE_VERSION=3.0.0
 ENV TEZ_VERSION=0.10.5
+ENV SPARK_VERSION=3.5.9
+ENV FLINK_VERSION=1.20.5
 ENV HADOOP_HOME=/opt/hadoop
 ENV HIVE_HOME=/opt/hive
 ENV HBASE_HOME=/opt/hbase
 ENV TEZ_HOME=/opt/tez
+ENV SPARK_HOME=/opt/spark
+ENV FLINK_HOME=/opt/flink
 ENV TEZ_CONF_DIR=${TEZ_HOME}/conf
 ENV HADOOP_CONF_DIR=${HADOOP_HOME}/etc/hadoop
 # Hive 4 has no MapReduce engine anymore — HiveServer2 needs Tez classes on
-# its own classpath just to start, regardless of query complexity.
-ENV HADOOP_CLASSPATH=${TEZ_CONF_DIR}:${TEZ_HOME}/*:${TEZ_HOME}/lib/*
+# its own classpath just to start, regardless of query complexity. The
+# Hadoop share/lib globs are here too — Hive/HBase get them for free via
+# `hadoop jar`/RunJar, but Flink-on-YARN needs HADOOP_CLASSPATH to already
+# contain the real Hadoop classpath explicitly (its own docs' documented
+# mechanism), not just Tez's.
+ENV HADOOP_CLASSPATH=${TEZ_CONF_DIR}:${TEZ_HOME}/*:${TEZ_HOME}/lib/*:${HADOOP_HOME}/etc/hadoop:${HADOOP_HOME}/share/hadoop/common/*:${HADOOP_HOME}/share/hadoop/common/lib/*:${HADOOP_HOME}/share/hadoop/hdfs/*:${HADOOP_HOME}/share/hadoop/hdfs/lib/*:${HADOOP_HOME}/share/hadoop/yarn/*:${HADOOP_HOME}/share/hadoop/yarn/lib/*:${HADOOP_HOME}/share/hadoop/mapreduce/*:${HADOOP_HOME}/share/hadoop/mapreduce/lib/*
+ENV HADOOP_STREAMING_JAR=${HADOOP_HOME}/share/hadoop/tools/lib/hadoop-streaming-${HADOOP_VERSION}.jar
 # One JDK cluster-wide. Hive 4.2.x's classes (compiled for Java 21) end up
 # loaded not just in HiveServer2 but inside Tez AM/task containers on the
 # worker nodes too, so every JVM in the cluster needs to be Java 21 — a
 # split JDK setup (17 elsewhere) doesn't work for Hive-on-Tez.
 ENV JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
-ENV PATH=${HADOOP_HOME}/bin:${HADOOP_HOME}/sbin:${HIVE_HOME}/bin:${HBASE_HOME}/bin:${JAVA_HOME}/bin:${PATH}
+ENV PATH=${HADOOP_HOME}/bin:${HADOOP_HOME}/sbin:${HIVE_HOME}/bin:${HBASE_HOME}/bin:${SPARK_HOME}/bin:${FLINK_HOME}/bin:${JAVA_HOME}/bin:${PATH}
 # Hadoop 3.3.x's launch scripts don't auto-inject the --add-opens flags
 # newer JDKs need for reflection (3.4.x's scripts do) — without these,
 # ResourceManager's Guice/cglib-based webapp fails with
@@ -85,7 +97,12 @@ ENV YARN_NODEMANAGER_USER=root
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
       openjdk-21-jdk-headless ca-certificates netcat-openbsd procps \
+      python3 python3-pip python-is-python3 \
     && rm -rf /var/lib/apt/lists/*
+
+# apache-flink's version must match FLINK_VERSION exactly — it's the Python
+# API binding for the same Flink distribution, not an independent library.
+RUN pip3 install --no-cache-dir mrjob apache-flink==${FLINK_VERSION}
 
 COPY --from=downloader-hadoop /tmp/hadoop.tar.gz /tmp/hadoop.tar.gz
 RUN tar -xzf /tmp/hadoop.tar.gz -C /opt \
@@ -122,6 +139,16 @@ RUN tar -xzf /tmp/tez.tar.gz -C /opt \
     && cp ${HIVE_HOME}/lib/commons-collections-3.2.2.jar ${TEZ_HOME}/lib/ \
     && rm -f ${TEZ_HOME}/lib/hadoop-hdfs-client-*.jar
 
+COPY --from=downloader-spark /tmp/spark.tgz /tmp/spark.tgz
+RUN tar -xzf /tmp/spark.tgz -C /opt \
+    && mv /opt/spark-${SPARK_VERSION}-bin-hadoop3 ${SPARK_HOME} \
+    && rm /tmp/spark.tgz
+
+COPY --from=downloader-flink /tmp/flink.tgz /tmp/flink.tgz
+RUN tar -xzf /tmp/flink.tgz -C /opt \
+    && mv /opt/flink-${FLINK_VERSION} ${FLINK_HOME} \
+    && rm /tmp/flink.tgz
+
 COPY --from=downloader-postgres-jdbc /tmp/postgresql.jar ${HIVE_HOME}/lib/postgresql.jar
 
 COPY conf/core-site.xml conf/hdfs-site.xml conf/yarn-site.xml conf/mapred-site.xml ${HADOOP_HOME}/etc/hadoop/
@@ -129,6 +156,7 @@ COPY conf/workers ${HADOOP_HOME}/etc/hadoop/workers
 COPY conf/hive-site.xml ${HIVE_HOME}/conf/hive-site.xml
 COPY conf/hbase-site.xml ${HBASE_HOME}/conf/hbase-site.xml
 COPY conf/tez-site.xml ${TEZ_CONF_DIR}/tez-site.xml
+COPY conf/spark-defaults.conf ${SPARK_HOME}/conf/spark-defaults.conf
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 

@@ -29,6 +29,7 @@ services:
       - "10000:10000"
     volumes:
       - hadoop-master-data:/opt/hadoop-data
+      - ./jobs:/jobs:ro
     networks:
       - hadoop-net
 
@@ -88,6 +89,14 @@ services:
       - "16010:16010"
     volumes:
       - hbase-master-data:/opt/hadoop-data
+    networks:
+      - hadoop-net
+
+  stream-producer:
+    build:
+      context: ./docker/stream-producer
+    container_name: stream-producer
+    hostname: stream-producer
     networks:
       - hadoop-net
 
