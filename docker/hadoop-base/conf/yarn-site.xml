@@ -36,4 +36,11 @@
     <name>yarn.log-aggregation-enable</name>
     <value>true</value>
   </property>
+  <property>
+    <!-- Dev box's Docker VM disk runs close to full from unrelated images/
+         build cache; the actual host disk has plenty of room. Not disabling
+         the check, just relaxing it for this constrained environment. -->
+    <name>yarn.nodemanager.disk-health-checker.max-disk-utilization-per-disk-percentage</name>
+    <value>98.0</value>
+  </property>
 </configuration>

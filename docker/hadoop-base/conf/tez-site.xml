@@ -6,6 +6,6 @@
   </property>
   <property>
     <name>tez.use.cluster.hadoop-libs</name>
-    <value>false</value>
+    <value>true</value>
   </property>
 </configuration>

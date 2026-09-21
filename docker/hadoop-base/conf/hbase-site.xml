@@ -20,4 +20,24 @@
     <name>hbase.zookeeper.property.dataDir</name>
     <value>/opt/hadoop-data/zk</value>
   </property>
+  <property>
+    <!-- The default async/fan-out WAL writer uses reflection against
+         HDFS-internal classes and was flaky here during earlier version
+         mismatches. The plain filesystem WAL provider is a safe, proven
+         (if slightly less optimized) alternative — kept even after fixing
+         the underlying version mismatch since there's no need to churn it
+         again. -->
+    <name>hbase.wal.provider</name>
+    <value>filesystem</value>
+  </property>
+  <property>
+    <!-- Docker's embedded DNS gives each container both a short hostname
+         and an FQDN (e.g. hadoop-worker2.modern_hadoop_hadoop-net). The
+         Master's reverse-DNS lookup on the RegionServer's RPC connection
+         resolves the FQDN, which doesn't match the short hostname the
+         RegionServer self-reports, so it aborts. Trust the self-reported
+         hostname instead of re-resolving it. -->
+    <name>hbase.regionserver.hostname.disable.master.reversedns</name>
+    <value>true</value>
+  </property>
 </configuration>

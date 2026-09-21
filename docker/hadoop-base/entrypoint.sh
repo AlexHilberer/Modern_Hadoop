@@ -46,8 +46,6 @@ case "$NODE_ROLE" in
 
     wait_for_tcp postgres 5432
 
-    export JAVA_HOME="${HIVE_JAVA_HOME}"
-
     if [ ! -f /opt/hadoop-data/hive-schema-initialized ]; then
       echo "Initializing Hive metastore schema..."
       schematool -dbType postgres -initSchema
