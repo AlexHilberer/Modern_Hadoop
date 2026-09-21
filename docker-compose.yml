@@ -26,11 +26,42 @@ services:
     ports:
       - "9870:9870"
       - "8088:8088"
-      - "9083:9083"
-      - "10000:10000"
     volumes:
       - hadoop-master-data:/opt/hadoop-data
       - ./jobs:/jobs:ro
+    networks:
+      - hadoop-net
+
+  hive-metastore:
+    build:
+      context: ./docker/hadoop-base
+    image: modern-hadoop-base:latest
+    container_name: hive-metastore
+    hostname: hive-metastore
+    environment:
+      - NODE_ROLE=hive-metastore
+    depends_on:
+      - hadoop-master
+      - postgres
+    ports:
+      - "9083:9083"
+    volumes:
+      - hive-metastore-data:/opt/hadoop-data
+    networks:
+      - hadoop-net
+
+  hiveserver2:
+    build:
+      context: ./docker/hadoop-base
+    image: modern-hadoop-base:latest
+    container_name: hiveserver2
+    hostname: hiveserver2
+    environment:
+      - NODE_ROLE=hiveserver2
+    depends_on:
+      - hive-metastore
+    ports:
+      - "10000:10000"
     networks:
       - hadoop-net
 
@@ -115,6 +146,7 @@ services:
     depends_on:
       - postgres
       - hadoop-master
+      - hiveserver2
     ports:
       - "8080:8080"
     volumes:
@@ -132,6 +164,7 @@ services:
     depends_on:
       - hadoop-master
       - hbase-master
+      - hiveserver2
     ports:
       - "8888:8888"
     volumes:
@@ -152,3 +185,4 @@ volumes:
   zookeeper-data:
   hbase-master-data:
   airflow-data:
+  hive-metastore-data:

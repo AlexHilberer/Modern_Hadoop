@@ -31,9 +31,7 @@ case "$NODE_ROLE" in
     yarn --daemon start resourcemanager
 
     wait_for_hdfs
-    hdfs dfs -mkdir -p /user/hive/warehouse
     hdfs dfs -mkdir -p /hbase
-    hdfs dfs -chmod -R 1777 /user/hive/warehouse
 
     if [ ! -f /opt/hadoop-data/tez-uploaded ]; then
       echo "Uploading Tez runtime to HDFS..."
@@ -51,17 +49,28 @@ case "$NODE_ROLE" in
       touch /opt/hadoop-data/spark-jars-uploaded
     fi
 
+    ;;
+  hive-metastore)
+    wait_for_tcp hadoop-master 9000
+    wait_for_hdfs
+    hdfs dfs -mkdir -p /user/hive/warehouse
+    hdfs dfs -chmod -R 1777 /user/hive/warehouse
+
     wait_for_tcp postgres 5432
 
-    if [ ! -f /opt/hadoop-data/hive-schema-initialized ]; then
+    # Idempotent by checking the schema itself (not a marker file) — this
+    # container's own volume has no memory of prior runs on a different
+    # container, but the schema's actual presence in Postgres does.
+    if ! schematool -dbType postgres -info > /dev/null 2>&1; then
       echo "Initializing Hive metastore schema..."
       schematool -dbType postgres -initSchema
-      touch /opt/hadoop-data/hive-schema-initialized
     fi
 
-    hive --service metastore &
-    sleep 10
-    hive --service hiveserver2 &
+    exec hive --service metastore
+    ;;
+  hiveserver2)
+    wait_for_tcp hive-metastore 9083
+    exec hive --service hiveserver2
     ;;
   worker)
     wait_for_tcp hadoop-master 9000
@@ -81,7 +90,7 @@ case "$NODE_ROLE" in
     hbase-daemon.sh start thrift
     ;;
   *)
-    echo "NODE_ROLE must be one of: master, worker, zookeeper, hbase-master" >&2
+    echo "NODE_ROLE must be one of: master, worker, zookeeper, hbase-master, hive-metastore, hiveserver2" >&2
     exit 1
     ;;
 esac
