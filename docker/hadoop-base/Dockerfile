@@ -71,12 +71,18 @@ ENV FLINK_HOME=/opt/flink
 ENV TEZ_CONF_DIR=${TEZ_HOME}/conf
 ENV HADOOP_CONF_DIR=${HADOOP_HOME}/etc/hadoop
 # Hive 4 has no MapReduce engine anymore — HiveServer2 needs Tez classes on
-# its own classpath just to start, regardless of query complexity. The
-# Hadoop share/lib globs are here too — Hive/HBase get them for free via
-# `hadoop jar`/RunJar, but Flink-on-YARN needs HADOOP_CLASSPATH to already
-# contain the real Hadoop classpath explicitly (its own docs' documented
-# mechanism), not just Tez's.
-ENV HADOOP_CLASSPATH=${TEZ_CONF_DIR}:${TEZ_HOME}/*:${TEZ_HOME}/lib/*:${HADOOP_HOME}/etc/hadoop:${HADOOP_HOME}/share/hadoop/common/*:${HADOOP_HOME}/share/hadoop/common/lib/*:${HADOOP_HOME}/share/hadoop/hdfs/*:${HADOOP_HOME}/share/hadoop/hdfs/lib/*:${HADOOP_HOME}/share/hadoop/yarn/*:${HADOOP_HOME}/share/hadoop/yarn/lib/*:${HADOOP_HOME}/share/hadoop/mapreduce/*:${HADOOP_HOME}/share/hadoop/mapreduce/lib/*
+# its own classpath just to start, regardless of query complexity.
+#
+# NOT including Hadoop's own share/hadoop/*/lib globs here: they were here
+# briefly for Flink-on-YARN (which needs the real Hadoop classpath exported
+# as HADOOP_CLASSPATH, per Flink's own docs), but that leaked Hadoop's
+# bundled old jline-3.9.0.jar (share/hadoop/yarn/lib/) onto every
+# Hadoop-launched process's classpath — including beeline, which conflicts
+# with Hive's own modern jline-3.25.0.jar and breaks terminal building
+# entirely. Same class of bug as the Tez/HBase bundled-jar conflicts.
+# Flink needs `export HADOOP_CLASSPATH=$(hadoop classpath)` scoped to its
+# own invocation instead — see jobs/flink/stream_job.py's usage comment.
+ENV HADOOP_CLASSPATH=${TEZ_CONF_DIR}:${TEZ_HOME}/*:${TEZ_HOME}/lib/*
 ENV HADOOP_STREAMING_JAR=${HADOOP_HOME}/share/hadoop/tools/lib/hadoop-streaming-${HADOOP_VERSION}.jar
 # One JDK cluster-wide. Hive 4.2.x's classes (compiled for Java 21) end up
 # loaded not just in HiveServer2 but inside Tez AM/task containers on the

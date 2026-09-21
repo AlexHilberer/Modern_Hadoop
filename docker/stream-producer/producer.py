@@ -4,6 +4,7 @@ from."""
 import time
 
 from hdfs import InsecureClient
+from requests.exceptions import ConnectionError as RequestsConnectionError
 
 NAMENODE_WEBHDFS_URL = "http://hadoop-master:9870"
 STREAM_DIR = "/stream/numbers"
@@ -11,7 +12,13 @@ STREAM_DIR = "/stream/numbers"
 
 def main():
     client = InsecureClient(NAMENODE_WEBHDFS_URL, user="root")
-    client.makedirs(STREAM_DIR)
+    while True:
+        try:
+            client.makedirs(STREAM_DIR)
+            break
+        except RequestsConnectionError:
+            print("Waiting for HDFS...", flush=True)
+            time.sleep(2)
 
     n = 0
     while True:
