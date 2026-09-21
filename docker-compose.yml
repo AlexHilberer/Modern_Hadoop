@@ -92,6 +92,7 @@ services:
       - zookeeper
     ports:
       - "16010:16010"
+      - "9090:9090"
     volumes:
       - hbase-master-data:/opt/hadoop-data
     networks:
@@ -120,6 +121,22 @@ services:
       - airflow-data:/opt/airflow-data
       - ./jobs:/jobs:ro
       - ./docker/airflow/dags:/opt/airflow/dags:ro
+    networks:
+      - hadoop-net
+
+  jupyterlab:
+    build:
+      context: ./docker/jupyter
+    container_name: jupyterlab
+    hostname: jupyterlab
+    depends_on:
+      - hadoop-master
+      - hbase-master
+    ports:
+      - "8888:8888"
+    volumes:
+      - ./jobs:/jobs:ro
+      - ./notebooks:/opt/notebooks
     networks:
       - hadoop-net
 

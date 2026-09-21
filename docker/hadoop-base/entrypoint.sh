@@ -71,6 +71,7 @@ case "$NODE_ROLE" in
     wait_for_tcp hadoop-master 9000
     wait_for_tcp zookeeper 2181
     hbase-daemon.sh start master
+    hbase-daemon.sh start thrift
     ;;
   *)
     echo "NODE_ROLE must be one of: master, worker, zookeeper, hbase-master" >&2
