@@ -40,4 +40,14 @@
     <name>hbase.regionserver.hostname.disable.master.reversedns</name>
     <value>true</value>
   </property>
+  <property>
+    <!-- HBase 3.x clients bootstrap master discovery from hbase.masters,
+         which defaults to the CLIENT's own hostname if unset (assuming
+         you're running the shell colocated with a master). That only
+         worked by coincidence on hbase-master itself; every other
+         container (airflow, jupyterlab, ...) connected to its own
+         hostname:16000 and got "Connection refused". Must be explicit. -->
+    <name>hbase.masters</name>
+    <value>hbase-master:16000</value>
+  </property>
 </configuration>

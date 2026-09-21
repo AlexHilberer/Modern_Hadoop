@@ -173,6 +173,23 @@ services:
     networks:
       - hadoop-net
 
+  streamlit:
+    build:
+      context: ./docker/streamlit
+    container_name: streamlit
+    hostname: streamlit
+    depends_on:
+      - airflow
+      - hadoop-master
+      - stream-producer
+    ports:
+      - "8501:8501"
+    volumes:
+      - airflow-data:/opt/airflow-data:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - hadoop-net
+
 networks:
   hadoop-net:
     driver: bridge

@@ -1,7 +1,9 @@
-"""Chains the Phase 3 jobs into one pipeline: Spark wordcount, then mrjob
-wordcount (same input, for comparison), then the Hive-on-Tez sample query.
-Sequential on purpose — the 2-worker/2GB-per-node YARN cluster is too small
-to usefully run these concurrently."""
+"""The flagship demo: the same wordcount data run through every engine in
+the stack, then Hive-on-Tez, HBase, and a brief Flink streaming run, all in
+one DAG. Sequential on purpose — the 2-worker/2GB-per-node YARN cluster is
+too small to usefully run these concurrently (we've seen firsthand how
+easily a single lingering job can starve everything else on a cluster
+this size)."""
 from datetime import datetime
 
 from airflow import DAG
@@ -13,6 +15,15 @@ with DAG(
     start_date=datetime(2026, 1, 1),
     catchup=False,
 ) as dag:
+    java_mapreduce = BashOperator(
+        task_id="java_mapreduce_wordcount",
+        bash_command=(
+            "hdfs dfs -rm -r -f /user/root/airflow-mapreduce-output && "
+            "yarn jar $HADOOP_HOME/share/hadoop/mapreduce/hadoop-mapreduce-examples-*.jar "
+            "wordcount /user/root/input /user/root/airflow-mapreduce-output"
+        ),
+    )
+
     spark_wordcount = BashOperator(
         task_id="spark_wordcount",
         bash_command=(
@@ -45,4 +56,17 @@ with DAG(
         ),
     )
 
-    spark_wordcount >> mrjob_wordcount >> hive_query
+    hbase_demo = BashOperator(
+        task_id="hbase_put_get_scan",
+        bash_command="hbase shell < /jobs/hbase/demo.hbase",
+    )
+
+    flink_demo = BashOperator(
+        task_id="flink_stream_demo",
+        # Trailing space is deliberate: BashOperator treats a bash_command
+        # ending in .sh as a Jinja template *file* to load from the DAGs
+        # folder rather than literal shell text, and fails instantly.
+        bash_command="bash /jobs/flink/run_demo.sh ",
+    )
+
+    java_mapreduce >> spark_wordcount >> mrjob_wordcount >> hive_query >> hbase_demo >> flink_demo

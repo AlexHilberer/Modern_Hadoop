@@ -1,0 +1,10 @@
+if exists 'dag_demo'
+  disable 'dag_demo'
+  drop 'dag_demo'
+end
+create 'dag_demo', 'cf'
+put 'dag_demo', 'row1', 'cf:greeting', 'hello from airflow'
+put 'dag_demo', 'row2', 'cf:greeting', 'hbase is genuinely still alive'
+get 'dag_demo', 'row1'
+scan 'dag_demo'
+exit
