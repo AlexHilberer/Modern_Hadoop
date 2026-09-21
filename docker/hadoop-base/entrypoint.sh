@@ -44,6 +44,13 @@ case "$NODE_ROLE" in
       touch /opt/hadoop-data/tez-uploaded
     fi
 
+    if [ ! -f /opt/hadoop-data/spark-jars-uploaded ]; then
+      echo "Uploading Spark jars to HDFS..."
+      hdfs dfs -mkdir -p /apps/spark/jars
+      hdfs dfs -put -f "${SPARK_HOME}"/jars/*.jar /apps/spark/jars/
+      touch /opt/hadoop-data/spark-jars-uploaded
+    fi
+
     wait_for_tcp postgres 5432
 
     if [ ! -f /opt/hadoop-data/hive-schema-initialized ]; then
