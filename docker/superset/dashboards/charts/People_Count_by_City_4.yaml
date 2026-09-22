@@ -1,0 +1,24 @@
+slice_name: People Count by City
+description: null
+certified_by: null
+certification_details: null
+viz_type: echarts_timeseries_bar
+params:
+  metrics:
+  - expressionType: SQL
+    sqlExpression: COUNT(*)
+    label: People Count
+  groupby:
+  - city
+  adhoc_filters: []
+  row_limit: 100
+  x_axis: city
+  orientation: vertical
+query_context: '{"datasource": {"id": 1, "type": "table"}, "force": false, "queries":
+  [{"metrics": [{"expressionType": "SQL", "sqlExpression": "COUNT(*)", "label": "People
+  Count"}], "groupby": ["city"], "row_limit": 100}], "result_format": "json", "result_type":
+  "full"}'
+cache_timeout: null
+uuid: 57055e5c-2384-4511-84a2-1951be9fee87
+version: 1.0.0
+dataset_uuid: 6c3bb9dc-313e-40e6-b79a-7c89551ebfe7

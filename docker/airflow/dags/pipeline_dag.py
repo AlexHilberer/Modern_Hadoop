@@ -1,9 +1,9 @@
 """The flagship demo: the same wordcount data run through every engine in
 the stack, then Hive-on-Tez, HBase, and a brief Flink streaming run, all in
-one DAG. Sequential on purpose — the 2-worker/2GB-per-node YARN cluster is
-too small to usefully run these concurrently (we've seen firsthand how
-easily a single lingering job can starve everything else on a cluster
-this size)."""
+one DAG. Sequential on purpose, since the 2-worker/2GB-per-node YARN
+cluster is too small to usefully run these concurrently (we've seen
+firsthand how easily a single lingering job can starve everything else on
+a cluster this size)."""
 from datetime import datetime
 
 from airflow import DAG
@@ -15,15 +15,6 @@ with DAG(
     start_date=datetime(2026, 1, 1),
     catchup=False,
 ) as dag:
-    java_mapreduce = BashOperator(
-        task_id="java_mapreduce_wordcount",
-        bash_command=(
-            "hdfs dfs -rm -r -f /user/root/airflow-mapreduce-output && "
-            "yarn jar $HADOOP_HOME/share/hadoop/mapreduce/hadoop-mapreduce-examples-*.jar "
-            "wordcount /user/root/input /user/root/airflow-mapreduce-output"
-        ),
-    )
-
     spark_wordcount = BashOperator(
         task_id="spark_wordcount",
         bash_command=(
@@ -51,6 +42,8 @@ with DAG(
         # terminal even non-interactively and fails; stdin redirection uses
         # the same script-mode path as `-e` and actually works headless.
         bash_command=(
+            "hdfs dfs -mkdir -p /data/people && "
+            "hdfs dfs -put -f /jobs/hive/people.csv /data/people/people.csv && "
             "beeline -u jdbc:hive2://hiveserver2:10000 -n root "
             "< /jobs/hive/sample_queries.sql"
         ),
@@ -69,4 +62,4 @@ with DAG(
         bash_command="bash /jobs/flink/run_demo.sh ",
     )
 
-    java_mapreduce >> spark_wordcount >> mrjob_wordcount >> hive_query >> hbase_demo >> flink_demo
+    spark_wordcount >> mrjob_wordcount >> hive_query >> hbase_demo >> flink_demo

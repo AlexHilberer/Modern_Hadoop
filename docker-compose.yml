@@ -190,6 +190,20 @@ services:
     networks:
       - hadoop-net
 
+  superset:
+    build:
+      context: ./docker/superset
+    container_name: superset
+    hostname: superset
+    depends_on:
+      - postgres
+      - hiveserver2
+    ports:
+      # 8088 is already YARN RM's UI port on hadoop-master.
+      - "8089:8088"
+    networks:
+      - hadoop-net
+
 networks:
   hadoop-net:
     driver: bridge

@@ -24,7 +24,7 @@
     <!-- The default async/fan-out WAL writer uses reflection against
          HDFS-internal classes and was flaky here during earlier version
          mismatches. The plain filesystem WAL provider is a safe, proven
-         (if slightly less optimized) alternative — kept even after fixing
+         (if slightly less optimized) alternative, kept even after fixing
          the underlying version mismatch since there's no need to churn it
          again. -->
     <name>hbase.wal.provider</name>

@@ -1,0 +1,20 @@
+slice_name: Average Age
+description: null
+certified_by: null
+certification_details: null
+viz_type: big_number_total
+params:
+  metric:
+    expressionType: SQL
+    sqlExpression: AVG(age)
+    label: Average Age
+  adhoc_filters: []
+  header_font_size: 0.4
+  subheader_font_size: 0.15
+query_context: '{"datasource": {"id": 1, "type": "table"}, "force": false, "queries":
+  [{"metrics": [{"expressionType": "SQL", "sqlExpression": "AVG(age)", "label": "Average
+  Age"}], "row_limit": 1}], "result_format": "json", "result_type": "full"}'
+cache_timeout: null
+uuid: 34b11ca8-bc6f-43ec-91d5-470d6aafbaac
+version: 1.0.0
+dataset_uuid: 6c3bb9dc-313e-40e6-b79a-7c89551ebfe7

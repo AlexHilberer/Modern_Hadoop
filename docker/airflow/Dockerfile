@@ -1,5 +1,5 @@
 # Extends the shared Hadoop image so this container is itself a YARN edge
-# node — its DAG tasks call spark-submit/mrjob/beeline directly, no remote
+# node: its DAG tasks call spark-submit/mrjob/beeline directly, no remote
 # execution needed.
 FROM modern-hadoop-base:latest
 
@@ -16,7 +16,7 @@ RUN pip3 install --no-cache-dir "apache-airflow[postgres]==${AIRFLOW_VERSION}" \
       --constraint "https://raw.githubusercontent.com/apache/airflow/constraints-${AIRFLOW_VERSION}/constraints-3.10.txt"
 
 # beeline's jline terminal builder fails without a tty (see hadoop-base
-# entrypoint history) — safe to bake in globally here since, unlike
+# entrypoint history). Safe to bake in globally here since, unlike
 # hadoop-base, this container runs no long-lived daemons whose logs it'd
 # spam with "Picked up JAVA_TOOL_OPTIONS".
 ENV JAVA_TOOL_OPTIONS="-Dorg.jline.terminal.provider=dumb -Dorg.jline.terminal.dumb=true"

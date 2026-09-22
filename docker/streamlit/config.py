@@ -8,11 +8,10 @@ STREAM_PRODUCER_CONTAINER = "stream-producer"
 
 DAGS = [
     ("modern_hadoop_pipeline", "Full pipeline (all 5 engines)"),
-    ("mapreduce_wordcount", "MapReduce (Java)"),
     ("spark_wordcount", "Spark"),
     ("hive_tez_query", "Hive on Tez"),
     ("hbase_demo", "HBase"),
     ("flink_stream_demo", "Flink"),
 ]
 
-STATE_EMOJI = {"success": "✅", "failed": "❌", "running": "🔄", "queued": "⏳"}
+STATE_LABEL = {"success": "[OK]", "failed": "[FAILED]", "running": "[RUNNING]", "queued": "[QUEUED]"}

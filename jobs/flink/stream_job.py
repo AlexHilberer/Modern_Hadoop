@@ -3,13 +3,13 @@ doubles each value, submitted to YARN as a real Flink job.
 
 PyFlink's Python DataStream API has no built-in raw-socket source, so this
 uses Flink's FileSource in continuous-monitoring mode against the HDFS
-directory stream-producer writes into — a real distributed source that
+directory stream-producer writes into, a real distributed source that
 works regardless of which YARN node the TaskManager lands on.
 
 Usage: export HADOOP_CLASSPATH=$(hadoop classpath) && \
            flink run -m yarn-cluster -py stream_job.py
 
-HADOOP_CLASSPATH is scoped to this command deliberately, not set globally —
+HADOOP_CLASSPATH is scoped to this command deliberately, not set globally,
 see the note above HADOOP_CLASSPATH in docker/hadoop-base/Dockerfile.
 """
 from pyflink.common import Duration, WatermarkStrategy

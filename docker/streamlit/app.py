@@ -12,7 +12,7 @@ import requests
 import streamlit as st
 
 from airflow_client import get_task_instances, list_recent_runs, read_task_output, trigger_dag
-from config import AIRFLOW_URL, DAGS, STATE_EMOJI, STREAM_PRODUCER_CONTAINER
+from config import AIRFLOW_URL, DAGS, STATE_LABEL, STREAM_PRODUCER_CONTAINER
 from yarn_client import get_yarn_nodes
 
 st.set_page_config(page_title="Modern Hadoop Control Panel", layout="wide")
@@ -23,7 +23,7 @@ def docker_client():
     return docker.from_env()
 
 
-st.title("🐘 Modern Hadoop Control Panel")
+st.title("Modern Hadoop Control Panel")
 
 # --- Cluster health -----------------------------------------------------
 st.header("Cluster health")
@@ -104,7 +104,7 @@ if runs:
         [
             {
                 "DAG": r["dag_id"],
-                "State": f"{STATE_EMOJI.get(r['state'], '')} {r['state']}",
+                "State": STATE_LABEL.get(r["state"], r["state"]),
                 "Started": r.get("start_date", ""),
                 "Ended": r.get("end_date", ""),
             }
@@ -113,7 +113,7 @@ if runs:
         use_container_width=True,
     )
 else:
-    st.info("No DAG runs yet — trigger one above.")
+    st.info("No DAG runs yet, trigger one above.")
 
 st.caption(f"Airflow UI: [{AIRFLOW_URL}]({AIRFLOW_URL})")
 
@@ -124,7 +124,7 @@ st.header("Job output")
 
 if runs:
     run_by_label = {
-        f"{r['dag_id']} · {r.get('start_date', '')} · {STATE_EMOJI.get(r['state'], '')} {r['state']}": (
+        f"{r['dag_id']} | {r.get('start_date', '')} | {STATE_LABEL.get(r['state'], r['state'])}": (
             r["dag_id"],
             r["dag_run_id"],
         )
@@ -149,9 +149,9 @@ if runs:
 
         any_active = any(t["state"] in ("running", "queued", "scheduled") for t in tasks)
         for t in tasks:
-            emoji = STATE_EMOJI.get(t["state"], "⚪")
-            duration = f"{t['duration']:.1f}s" if t.get("duration") else "—"
-            st.caption(f"{emoji} **{t['task_id']}** · {t['state']} · {duration}")
+            label = STATE_LABEL.get(t["state"], t["state"])
+            duration = f"{t['duration']:.1f}s" if t.get("duration") else "n/a"
+            st.caption(f"{label} **{t['task_id']}** | {t['state']} | {duration}")
             st.code(read_task_output(dag_id, run_id, t["task_id"]), language=None)
 
         if any_active:
@@ -160,4 +160,4 @@ if runs:
 
     show_job_output()
 else:
-    st.info("No DAG runs yet — trigger one above.")
+    st.info("No DAG runs yet, trigger one above.")

@@ -1,0 +1,21 @@
+slice_name: People (raw)
+description: null
+certified_by: null
+certification_details: null
+viz_type: table
+params:
+  query_mode: raw
+  columns:
+  - name
+  - age
+  - department
+  - city
+  adhoc_filters: []
+  row_limit: 100
+query_context: '{"datasource": {"id": 1, "type": "table"}, "force": false, "queries":
+  [{"columns": ["name", "age", "department", "city"], "row_limit": 100}], "result_format":
+  "json", "result_type": "full"}'
+cache_timeout: null
+uuid: 64b05db9-2e30-4f55-b830-8b2734816107
+version: 1.0.0
+dataset_uuid: 6c3bb9dc-313e-40e6-b79a-7c89551ebfe7

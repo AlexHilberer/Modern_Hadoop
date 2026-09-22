@@ -1,5 +1,5 @@
-"""Spark wordcount on YARN — same input as the Phase 1 MapReduce wordcount
-and the mrjob one, so the three engines can be compared on identical data.
+"""Spark wordcount on YARN, same input as the mrjob wordcount, so the two
+engines can be compared on identical data.
 
 Usage: spark-submit --master yarn --deploy-mode cluster example_job.py \
            hdfs:///user/root/input hdfs:///user/root/spark-output

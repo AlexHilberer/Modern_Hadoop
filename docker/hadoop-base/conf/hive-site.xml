@@ -40,4 +40,19 @@
     <name>hive.execution.engine</name>
     <value>tez</value>
   </property>
+  <property>
+    <!-- Real Hive 4.2.1 bug: the first GROUP BY query using COUNT (any
+         form: COUNT(*), COUNT(1), COUNT(col)) compiled in a fresh
+         HiveServer2 session throws a compile time
+         ArrayIndexOutOfBoundsException, but only if it's the first
+         GROUP BY query in that session; a GROUP BY using AVG/SUM first,
+         or the exact same COUNT query as a later statement, works fine.
+         Isolated by disabling pieces one at a time (vectorization, table
+         stats); only turning off the CBO fixed it, pointing at a
+         Calcite/CBO planning bug rather than storage or vectorization.
+         Costs some query plan optimization; worth it for correctness on
+         a dataset this small. -->
+    <name>hive.cbo.enable</name>
+    <value>false</value>
+  </property>
 </configuration>

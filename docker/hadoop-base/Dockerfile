@@ -1,7 +1,7 @@
 # Download stages: each is cached independently, keyed only by its own
 # version ARG, so churn in the final stage (apt packages, configs,
 # entrypoint) never forces a re-download. Stages beyond downloader-hadoop
-# are pre-fetches for later phases — not wired into the final image yet.
+# are pre-fetches for later phases, not wired into the final image yet.
 # dlcdn.apache.org is the fast current-release mirror network; it only
 # keeps recent releases, so pin versions that are actually present there.
 FROM ubuntu:22.04 AS downloader-base
@@ -25,7 +25,7 @@ RUN curl -fsSL https://dlcdn.apache.org/tez/${TEZ_VERSION}/apache-tez-${TEZ_VERS
 
 # HBase 2.x's "-bin" release bundles an old Hadoop 2.10.2 client and its
 # compiled bytecode expects Hadoop 2's nested DFSInputStream$ReadStatistics
-# return type from HdfsDataInputStream.getReadStatistics() — every current
+# return type from HdfsDataInputStream.getReadStatistics(); every current
 # Hadoop 3.x release already refactored that to a top-level class, so 2.x
 # fails with NoSuchMethodError at HMaster startup against ANY real Hadoop
 # 3.x, not just newer ones. HBase 3.0.0 bundles Hadoop 3.4.3 itself, so it's
@@ -42,7 +42,7 @@ RUN curl -fsSL https://dlcdn.apache.org/spark/spark-${SPARK_VERSION}/spark-${SPA
 
 # Flink-on-YARN needs the real Hadoop classpath (not just Tez's, unlike
 # Hive/HBase which launch via `hadoop jar`/RunJar and get it automatically)
-# exported as HADOOP_CLASSPATH — see the final stage below.
+# exported as HADOOP_CLASSPATH; see the final stage below.
 FROM downloader-base AS downloader-flink
 ARG FLINK_VERSION=1.20.5
 RUN curl -fsSL https://dlcdn.apache.org/flink/flink-${FLINK_VERSION}/flink-${FLINK_VERSION}-bin-scala_2.12.tgz \
@@ -70,28 +70,28 @@ ENV SPARK_HOME=/opt/spark
 ENV FLINK_HOME=/opt/flink
 ENV TEZ_CONF_DIR=${TEZ_HOME}/conf
 ENV HADOOP_CONF_DIR=${HADOOP_HOME}/etc/hadoop
-# Hive 4 has no MapReduce engine anymore — HiveServer2 needs Tez classes on
+# Hive 4 has no MapReduce engine anymore, so HiveServer2 needs Tez classes on
 # its own classpath just to start, regardless of query complexity.
 #
 # NOT including Hadoop's own share/hadoop/*/lib globs here: they were here
 # briefly for Flink-on-YARN (which needs the real Hadoop classpath exported
 # as HADOOP_CLASSPATH, per Flink's own docs), but that leaked Hadoop's
 # bundled old jline-3.9.0.jar (share/hadoop/yarn/lib/) onto every
-# Hadoop-launched process's classpath — including beeline, which conflicts
+# Hadoop-launched process's classpath, including beeline, which conflicts
 # with Hive's own modern jline-3.25.0.jar and breaks terminal building
 # entirely. Same class of bug as the Tez/HBase bundled-jar conflicts.
 # Flink needs `export HADOOP_CLASSPATH=$(hadoop classpath)` scoped to its
-# own invocation instead — see jobs/flink/stream_job.py's usage comment.
+# own invocation instead; see jobs/flink/stream_job.py's usage comment.
 ENV HADOOP_CLASSPATH=${TEZ_CONF_DIR}:${TEZ_HOME}/*:${TEZ_HOME}/lib/*
 ENV HADOOP_STREAMING_JAR=${HADOOP_HOME}/share/hadoop/tools/lib/hadoop-streaming-${HADOOP_VERSION}.jar
 # One JDK cluster-wide. Hive 4.2.x's classes (compiled for Java 21) end up
 # loaded not just in HiveServer2 but inside Tez AM/task containers on the
-# worker nodes too, so every JVM in the cluster needs to be Java 21 — a
+# worker nodes too, so every JVM in the cluster needs to be Java 21; a
 # split JDK setup (17 elsewhere) doesn't work for Hive-on-Tez.
 ENV JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
 ENV PATH=${HADOOP_HOME}/bin:${HADOOP_HOME}/sbin:${HIVE_HOME}/bin:${HBASE_HOME}/bin:${SPARK_HOME}/bin:${FLINK_HOME}/bin:${JAVA_HOME}/bin:${PATH}
 # Hadoop 3.3.x's launch scripts don't auto-inject the --add-opens flags
-# newer JDKs need for reflection (3.4.x's scripts do) — without these,
+# newer JDKs need for reflection (3.4.x's scripts do); without these,
 # ResourceManager's Guice/cglib-based webapp fails with
 # InaccessibleObjectException on startup under Java 17+/21.
 ENV HADOOP_OPTS="--add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.math=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED --add-opens=java.base/java.text=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.base/java.util.zip=ALL-UNNAMED --add-opens=java.base/sun.security.util=ALL-UNNAMED --add-opens=java.base/sun.security.x509=ALL-UNNAMED"
@@ -106,7 +106,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       python3 python3-pip python-is-python3 \
     && rm -rf /var/lib/apt/lists/*
 
-# apache-flink's version must match FLINK_VERSION exactly — it's the Python
+# apache-flink's version must match FLINK_VERSION exactly; it's the Python
 # API binding for the same Flink distribution, not an independent library.
 RUN pip3 install --no-cache-dir mrjob apache-flink==${FLINK_VERSION}
 
@@ -135,7 +135,7 @@ COPY --from=downloader-tez /tmp/tez.tar.gz /tmp/tez.tar.gz
 # (same fix as HBase's bundled jars). Only removing hadoop-hdfs-client:
 # tez.use.cluster.hadoop-libs=true supplies the real common/hdfs/yarn libs
 # to Tez's own YARN containers, but NOT the separate MapReduce framework
-# libs — Tez's own mapreduce-compat shim needs its bundled
+# libs; Tez's own mapreduce-compat shim needs its bundled
 # hadoop-mapreduce-client-core/-common (org.apache.hadoop.mapred.JobConf
 # etc.) to stay, or the AM fails with NoClassDefFoundError.
 RUN tar -xzf /tmp/tez.tar.gz -C /opt \

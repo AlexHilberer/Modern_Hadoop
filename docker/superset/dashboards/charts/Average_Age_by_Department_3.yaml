@@ -1,0 +1,24 @@
+slice_name: Average Age by Department
+description: null
+certified_by: null
+certification_details: null
+viz_type: echarts_timeseries_bar
+params:
+  metrics:
+  - expressionType: SQL
+    sqlExpression: AVG(age)
+    label: Average Age
+  groupby:
+  - department
+  adhoc_filters: []
+  row_limit: 100
+  x_axis: department
+  orientation: vertical
+query_context: '{"datasource": {"id": 1, "type": "table"}, "force": false, "queries":
+  [{"metrics": [{"expressionType": "SQL", "sqlExpression": "AVG(age)", "label": "Average
+  Age"}], "groupby": ["department"], "row_limit": 100}], "result_format": "json",
+  "result_type": "full"}'
+cache_timeout: null
+uuid: 0deaeff3-a524-48ec-9e68-10d9a23d1e7d
+version: 1.0.0
+dataset_uuid: 6c3bb9dc-313e-40e6-b79a-7c89551ebfe7

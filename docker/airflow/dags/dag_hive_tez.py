@@ -17,6 +17,8 @@ with DAG(
         # terminal even non-interactively and fails; stdin redirection uses
         # the same script-mode path as `-e` and actually works headless.
         bash_command=(
+            "hdfs dfs -mkdir -p /data/people && "
+            "hdfs dfs -put -f /jobs/hive/people.csv /data/people/people.csv && "
             "beeline -u jdbc:hive2://hiveserver2:10000 -n root "
             "< /jobs/hive/sample_queries.sql"
         ),

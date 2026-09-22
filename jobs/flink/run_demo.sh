@@ -2,7 +2,7 @@
 # Flink jobs are unbounded streams, so a "run to completion" DAG task
 # doesn't make sense the way it does for batch jobs. This submits
 # detached, confirms it's genuinely RUNNING on YARN, lets it process the
-# stream briefly, then tears it down — demonstrates real functionality
+# stream briefly, then tears it down, demonstrating real functionality
 # without leaving a permanent resource hog on our tiny 4GB-total cluster.
 set -e
 
@@ -44,7 +44,7 @@ if [ "$STATE" != "RUNNING" ]; then
   exit 1
 fi
 
-echo "Flink job is running — letting it process the stream for 20s..."
+echo "Flink job is running, letting it process the stream for 20s..."
 sleep 20
 
 echo "Demo complete, tearing down the job..."

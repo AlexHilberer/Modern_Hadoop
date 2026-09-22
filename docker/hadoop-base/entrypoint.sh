@@ -58,9 +58,9 @@ case "$NODE_ROLE" in
 
     wait_for_tcp postgres 5432
 
-    # Idempotent by checking the schema itself (not a marker file) — this
-    # container's own volume has no memory of prior runs on a different
-    # container, but the schema's actual presence in Postgres does.
+    # Idempotent by checking the schema itself (not a marker file), since
+    # this container's own volume has no memory of prior runs on a
+    # different container, but the schema's actual presence in Postgres does.
     if ! schematool -dbType postgres -info > /dev/null 2>&1; then
       echo "Initializing Hive metastore schema..."
       schematool -dbType postgres -initSchema

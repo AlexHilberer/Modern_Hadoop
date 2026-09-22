@@ -1,6 +1,5 @@
-"""Classic MapReduce wordcount via mrjob's Hadoop runner — same input as the
-Phase 1 Java wordcount and the Spark one, run through real Hadoop Streaming
-on the live YARN cluster.
+"""Classic MapReduce wordcount via mrjob's Hadoop runner, same input as the
+Spark job, run through real Hadoop Streaming on the live YARN cluster.
 
 Usage: python3 wordcount.py -r hadoop hdfs:///user/root/input/sample.txt \
            --hadoop-streaming-jar "$HADOOP_STREAMING_JAR" \

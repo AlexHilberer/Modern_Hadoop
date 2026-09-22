@@ -1,6 +1,6 @@
 """Writes an incrementing counter to HDFS once a second, one small file per
-number, via WebHDFS — the data source Flink's stream job continuously reads
-from."""
+number, via WebHDFS. This is the data source Flink's stream job
+continuously reads from."""
 import time
 
 from hdfs import InsecureClient
