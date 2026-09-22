@@ -8,6 +8,11 @@ ENV AIRFLOW_HOME=/opt/airflow-data
 ENV AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://airflow:airflow@postgres:5432/airflow
 ENV AIRFLOW__CORE__DAGS_FOLDER=/opt/airflow/dags
 ENV AIRFLOW__CORE__LOAD_EXAMPLES=false
+# Airflow pauses every newly-discovered DAG by default. On a fresh install
+# this silently blocks every trigger (via API, the UI, or the Streamlit
+# control panel) forever, since a manual trigger does not itself unpause
+# a DAG, found the hard way testing a full docker compose down -v reset.
+ENV AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION=false
 # Airflow 2.x is EOL (no more security patches); 3.x is the only real
 # option now. The documented install method pins against a constraints
 # file matching this exact Airflow + Python version, avoiding dependency
